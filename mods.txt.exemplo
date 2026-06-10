@@ -1,0 +1,5 @@
+; Exemplo de linha a adicionar no arquivo Mods/mods.txt do UE4SS.
+; Formato: NomeDaPasta : 1  (1 = habilitado, 0 = desabilitado)
+; Adicione a linha abaixo ANTES da linha ": 1" final, se ela existir.
+
+SolarpunkPauseOnMenu : 1

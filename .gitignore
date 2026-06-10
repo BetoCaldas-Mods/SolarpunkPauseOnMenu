@@ -1,0 +1,14 @@
+# Logs e artefatos de depuração
+*.log
+*_log.txt
+*_run.txt
+run_log.txt
+_pdb_report.txt
+
+# Python
+__pycache__/
+*.pyc
+
+# Sistema
+.DS_Store
+Thumbs.db
