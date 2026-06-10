@@ -9,6 +9,9 @@ _pdb_report.txt
 __pycache__/
 *.pyc
 
+# Config local (caminho do jogo)
+config/game-path.local
+
 # Sistema
 .DS_Store
 Thumbs.db

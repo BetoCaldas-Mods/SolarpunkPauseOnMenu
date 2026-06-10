@@ -1,0 +1,4 @@
+#!/bin/sh
+ROOT="$(git rev-parse --show-toplevel)" || exit 1
+cd "$ROOT" || exit 1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$ROOT/scripts/ue4ss-console.ps1" -Mode Dev || exit 1

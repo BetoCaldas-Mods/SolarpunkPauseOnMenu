@@ -67,6 +67,32 @@ UE4SS must be installed next to that executable.
 
 ## 2. Install this mod
 
+### Option A: Download the release zip (recommended)
+
+Go to [GitHub Releases](https://github.com/BetoCaldas-Mods/SolarpunkPauseOnMenu/releases)
+and download **`SolarpunkPauseOnMenu.zip`**. It contains only what is needed to run the mod:
+
+```
+README.md                   (quick install guide)
+SolarpunkPauseOnMenu/
+    enabled.txt
+    scripts/
+        main.lua
+```
+
+The zip README (`release/README.md` in the repo) is a short end-user guide.
+The full developer documentation stays in this repository README.
+
+Extract and copy the `SolarpunkPauseOnMenu` folder into:
+```
+<Steam>\steamapps\common\Solarpunk\Solarpunk\Binaries\Win64\Mods\
+```
+
+> The automatic **Source code (zip)** on GitHub includes the full repository (tools,
+> scripts, dev config). Use the **release asset** `SolarpunkPauseOnMenu.zip` instead.
+
+### Option B: Clone the repository
+
 1. Copy the `SolarpunkPauseOnMenu` folder from this repository into:
    ```
    <Steam>\steamapps\common\Solarpunk\Solarpunk\Binaries\Win64\Mods\
@@ -87,15 +113,38 @@ UE4SS must be installed next to that executable.
 
 ---
 
-## 3. Enable the UE4SS console (for logs)
+## 3. UE4SS debug consoles (automatic)
 
-In `...\Win64\UE4SS-settings.ini`, under `[Debug]`, set:
-```
-ConsoleEnabled = 1
-GuiConsoleEnabled = 1
-GuiConsoleVisible = 1
-```
-A console window will show `[SolarpunkPauseOnMenu] ...` log lines.
+UE4SS can show two debug windows (text console + GUI). This repo toggles them
+automatically between development and release:
+
+| When | Consoles | Git `config/console-mode.txt` |
+|---|---|---|
+| Developing locally | **ON** | `dev` (local only, not pushed) |
+| `git push` | **OFF** (local + committed) | `release` |
+
+### One-time setup
+
+1. Install git hooks:
+   ```powershell
+   .\scripts\install-hooks.ps1
+   ```
+2. Copy `config/game-path.local.example` to `config/game-path.local` and set the
+   full path to your `UE4SS-settings.ini` (the install script creates this if missing).
+
+### During development
+
+- Opening this project in **Cursor** enables consoles (`sessionStart` hook).
+- Switching git branches also enables consoles (`post-checkout` hook).
+- Or run manually: `.\scripts\dev-start.ps1`
+
+Reference values are in `config/ue4ss-debug.dev.ini` and `config/ue4ss-debug.release.ini`.
+
+### On push
+
+The `pre-push` hook disables consoles on your machine, sets `config/console-mode.txt`
+to `release`, and auto-commits that file if needed. End users should keep consoles
+**off** (see `config/ue4ss-debug.release.ini`).
 
 ---
 
@@ -188,12 +237,52 @@ Re-run the scripts after a game patch that changes the shipping executable.
 
 ---
 
+## Publishing a release (maintainers)
+
+A GitHub Action builds the minimal mod zip automatically when you push a version tag:
+
+```powershell
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+The workflow `.github/workflows/release.yml` will:
+
+1. Validate mod files and `release/README.md` exist
+2. Create `SolarpunkPauseOnMenu.zip` (mod folder + minimal `README.md`)
+3. Publish a GitHub Release with that zip attached
+
+Test locally before tagging:
+
+```powershell
+.\scripts\build-release.ps1
+```
+
+You can also trigger the workflow manually from the **Actions** tab (`workflow_dispatch`).
+
+---
+
 ## File layout
 
 ```
 SolarpunkPauseOnMenu\             (repository)
     README.md
     mods.txt.exemplo
+    release\
+        README.md                 (minimal guide bundled in release zip)
+    config\
+        console-mode.txt            (release in git; dev locally while working)
+        game-path.local.example
+        ue4ss-debug.dev.ini
+        ue4ss-debug.release.ini
+    .github\
+        workflows\
+            release.yml             (builds SolarpunkPauseOnMenu.zip on tag push)
+    scripts\
+        ue4ss-console.ps1           (toggle consoles on/off)
+        dev-start.ps1               (enable consoles manually)
+        install-hooks.ps1           (install git hooks)
+        build-release.ps1           (build zip locally for testing)
     SolarpunkPauseOnMenu\           (copy to ...\Win64\Mods\)
         enabled.txt
         scripts\
