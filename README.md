@@ -1,161 +1,204 @@
-# Solarpunk - Mod "Pausar no Menu (ESC)"
+# SolarpunkPauseOnMenu
 
-Mod que **pausa o jogo quando o menu de ESC e exibido** e **despausa quando o menu e fechado**.
+Pauses the game when the ESC menu is shown and unpauses when it is closed.
 
-O jogo Solarpunk e feito em **Unreal Engine 5** e empacotado com IoStore
-(`.utoc` / `.ucas` / `.pak`). Esse tipo de jogo nao expoe um sistema de mods proprio,
-entao a forma padrao (maio/junho de 2026) de injetar logica como "pausar/despausar"
-e atraves do **UE4SS** (Unreal Engine 4/5 Scripting System), usando scripts em Lua.
+Solarpunk is built on **Unreal Engine 5** and packaged with IoStore (`.utoc` / `.ucas` / `.pak`).
+The game does not ship a native mod system, so this mod runs through **UE4SS**
+(Unreal Engine 4/5 Scripting System) using Lua scripts.
 
-- Referencia: documentacao oficial do UE4SS — https://docs.ue4ss.com
-- Guia de mod Lua — https://docs.ue4ss.com/guides/creating-a-lua-mod.html
-
----
-
-## 1. Pre-requisitos
-
-- Jogo instalado em: `E:\SteamLibrary\steamapps\common\Solarpunk`
-- Executavel real do jogo (shipping):
-  `E:\SteamLibrary\steamapps\common\Solarpunk\Solarpunk\Binaries\Win64\SolarpunkSteam-Win64-Shipping.exe`
-
-> IMPORTANTE: o `Solarpunk.exe` na raiz e apenas um launcher. O UE4SS precisa ser
-> instalado na pasta do executavel **shipping** (`Solarpunk\Binaries\Win64`).
+- UE4SS documentation: https://docs.ue4ss.com
+- Lua mod guide: https://docs.ue4ss.com/guides/creating-a-lua-mod.html
 
 ---
 
-## 2. Instalar o UE4SS
+## Requirements
 
-1. Baixe a versao mais recente do UE4SS (use a release **experimental/2.5.2+**, que tem
-   melhor compatibilidade com jogos UE5 recentes):
+- **Solarpunk** (Steam), installed locally
+- **UE4SS** installed in the game's shipping `Win64` folder (see below)
+- **UE4SS experimental build** — the stable release does **not** work with SolarPunk's engine (UE **5.7.1**). Minimum tested version: **`UE4SS_v3.0.1-954-g272ce2f8`**, or any newer experimental build that supports UE 5.7.1. Download from the [UE4SS releases page](https://github.com/UE4SS-RE/RE-UE4SS/releases) (`experimental-latest` or a newer experimental package)
+- **Custom UE4SS signatures** for UE 5.7.1 — Pattern Sleuth in the stable/experimental builds may fail to resolve critical globals on this game. Use the scripts in `tools/` with the game's `.pdb` to generate `UE4SS_Signatures/*.lua` (see [Advanced: UE4SS signatures](#advanced-ue4ss-signatures-for-ue-571))
+- **Engine version override** in `UE4SS-settings.ini`:
+  ```
+  [EngineVersionOverride]
+  MajorVersion = 5
+  MinorVersion = 7
+  ```
+
+> This repository contains **only the mod** (Lua scripts). UE4SS itself must be downloaded and installed separately.
+
+The real game executable is the shipping binary, not the root launcher:
+
+```
+<Steam>\steamapps\common\Solarpunk\Solarpunk\Binaries\Win64\SolarpunkSteam-Win64-Shipping.exe
+```
+
+UE4SS must be installed next to that executable.
+
+---
+
+## 1. Install UE4SS
+
+1. Download **`UE4SS_v3.0.1-954-g272ce2f8`** (minimum tested) or a newer experimental build
+   that supports UE 5.7.1 from:
    https://github.com/UE4SS-RE/RE-UE4SS/releases
-2. Extraia o conteudo do `.zip` para dentro de:
+   (the `experimental-latest` asset is fine if it is equal to or newer than that version)
+2. Extract into:
    ```
-   E:\SteamLibrary\steamapps\common\Solarpunk\Solarpunk\Binaries\Win64\
+   <Steam>\steamapps\common\Solarpunk\Solarpunk\Binaries\Win64\
    ```
-   Apos extrair, essa pasta deve conter (entre outros):
+   After extraction, that folder should contain (among others):
    ```
    Solarpunk\Binaries\Win64\
-       dwmapi.dll            (proxy do UE4SS)
+       dwmapi.dll            (UE4SS proxy)
        UE4SS.dll
        UE4SS-settings.ini
        Mods\
            mods.txt
            shared\
-           (mods que ja vem de exemplo)
+           (example mods)
    ```
+3. Set the engine version override in `UE4SS-settings.ini` (see [Requirements](#requirements)).
+4. If UE4SS hangs at startup or logs `PS Scan failed`, generate custom signatures (see [Advanced](#advanced-ue4ss-signatures-for-ue-571)).
 
-> Se o jogo nao iniciar com o `dwmapi.dll`, tente renomear o proxy para outro nome
-> suportado pelo UE4SS (ex.: `xinput1_3.dll`). Veja a doc de instalacao do UE4SS.
+> If the game does not start with `dwmapi.dll`, try renaming the proxy to another
+> supported name (e.g. `xinput1_3.dll`). See the UE4SS installation docs.
 
 ---
 
-## 3. Instalar este mod
+## 2. Install this mod
 
-1. Copie a pasta `SolarpunkPauseOnMenu` (que esta aqui ao lado deste README) para:
+1. Copy the `SolarpunkPauseOnMenu` folder from this repository into:
    ```
-   E:\SteamLibrary\steamapps\common\Solarpunk\Solarpunk\Binaries\Win64\Mods\
+   <Steam>\steamapps\common\Solarpunk\Solarpunk\Binaries\Win64\Mods\
    ```
-   Resultado:
+   Result:
    ```
    ...\Win64\Mods\SolarpunkPauseOnMenu\
        enabled.txt
        scripts\main.lua
    ```
-2. Habilite o mod. Ha duas formas (basta uma):
-   - **enabled.txt** (ja incluso): o UE4SS carrega a pasta automaticamente; ou
-   - **mods.txt**: abra `...\Win64\Mods\mods.txt` e adicione a linha
-     (veja `mods.txt.exemplo`):
+2. Enable the mod (either method works):
+   - **`enabled.txt`** (included): UE4SS loads the folder automatically; or
+   - **`mods.txt`**: open `...\Win64\Mods\mods.txt` and add the line
+     (see `mods.txt.exemplo`):
      ```
      SolarpunkPauseOnMenu : 1
      ```
 
 ---
 
-## 4. Ativar o console do UE4SS (para ver logs)
+## 3. Enable the UE4SS console (for logs)
 
-No arquivo `...\Win64\UE4SS-settings.ini`, em `[Debug]`, garanta:
+In `...\Win64\UE4SS-settings.ini`, under `[Debug]`, set:
 ```
 ConsoleEnabled = 1
 GuiConsoleEnabled = 1
 GuiConsoleVisible = 1
 ```
-Assim abre uma janela de console com os logs `[SolarpunkPauseOnMenu] ...`.
+A console window will show `[SolarpunkPauseOnMenu] ...` log lines.
 
 ---
 
-## 5. Descobrir o nome do widget do menu (passo unico recomendado)
+## 4. Discover the pause menu widget name (optional, for `detect` mode)
 
-O mod vem no modo `toggle` por padrao (ESC alterna pausa). Para sincronizar automaticamente
-com a visibilidade do menu, use o modo `detect`.
-Para funcionar 100%, ele precisa reconhecer o **nome da classe do widget** do menu de
-pausa. Para descobrir esse nome:
+The mod defaults to `toggle` mode (ESC toggles pause). To sync automatically with
+menu visibility, switch to `detect` mode.
 
-1. Inicie o jogo (carregue um save ate poder andar).
-2. Abra o menu com **ESC**.
-3. Com o menu aberto, pressione **F8** (tecla de descoberta deste mod).
-4. Olhe o console do UE4SS: ele lista todos os widgets atualmente na viewport, ex.:
+For `detect` mode to work reliably, the mod must recognize the **widget class name**
+of the pause menu:
+
+1. Start the game (load a save until you can move).
+2. Open the menu with **ESC**.
+3. With the menu open, press **F8** (this mod's discovery key).
+4. Check the UE4SS console. It lists widgets currently in the viewport, e.g.:
    ```
-   [SolarpunkPauseOnMenu] --- Widgets atualmente NA VIEWPORT ---
+   [SolarpunkPauseOnMenu] --- Widgets VISIVEIS na viewport ---
    [SolarpunkPauseOnMenu]   WBP_PauseMenu_C
    [SolarpunkPauseOnMenu]   WBP_HUD_C
    ```
-5. Identifique o widget do menu (algo como `WBP_PauseMenu_C`, `EscMenu_C`, etc.).
-6. Abra `SolarpunkPauseOnMenu\scripts\main.lua` e adicione um trecho (em minusculas)
-   desse nome em `Config.menuWidgetPatterns`. Ex.:
+5. Identify the pause menu widget (e.g. `WBP_PauseMenu_C`, `EscMenu_C`).
+6. Open `SolarpunkPauseOnMenu\scripts\main.lua` and add a lowercase substring of
+   that name to `Config.menuWidgetPatterns`. Example:
    ```lua
    menuWidgetPatterns = {
-       "pausemenu",   -- casa com WBP_PauseMenu_C
+       "pausemenu",   -- matches WBP_PauseMenu_C
    },
    ```
-7. Salve e recarregue os mods (tecla padrao **Ctrl+R** se o hot reload estiver ligado
-   no `UE4SS-settings.ini`) ou reinicie o jogo.
+7. Save and reload mods (**Ctrl+R** if hot reload is enabled in `UE4SS-settings.ini`)
+   or restart the game.
 
-> Dica: o mod ja tenta varios padroes comuns por padrao. Se o seu menu casar com um
-> deles, pode ja funcionar sem ajuste.
-
----
-
-## 6. Modos do mod
-
-No topo de `scripts/main.lua`, em `Config.mode`:
-
-- `"toggle"` (padrao): alterna a pausa a cada **ESC**. Funciona sem saber o nome do widget,
-  porem pode dessincronizar se o menu for fechado pelo mouse (basta apertar ESC de novo).
-- `"detect"`: detecta o widget do menu e pausa/despausa automaticamente,
-  independentemente de como o menu for aberto/fechado (ESC, mouse, botao "Resume").
-  Mais robusto, mas depende de `menuWidgetPatterns` reconhecer o menu.
-
-Outras opcoes:
-- `discoverKey`: tecla para listar widgets na viewport (padrao `F8`).
-- `pollIntervalMs`: frequencia de verificacao no modo detect (padrao 200 ms).
-- `debug`: liga/desliga os logs no console.
+> The mod already tries common patterns. If your menu matches one of them, `detect`
+> mode may work without changes.
 
 ---
 
-## 7. Solucao de problemas
+## 5. Mod modes
 
-- **Nada acontece / sem logs**: confirme que o UE4SS carregou (console abriu) e que o
-  mod aparece como carregado. Verifique se copiou para a pasta do `*-Shipping.exe`.
-- **F8 nao lista nada**: o menu pode nao ser um `UserWidget` padrao; tente abrir o menu
-  antes de apertar F8, e confira se o jogo esta em foco.
-- **Pausa em menus errados (inventario, etc.)**: refine `menuWidgetPatterns` para casar
-  apenas com o widget do menu de ESC.
-- **Multiplayer**: `SetGamePaused` so funciona de fato em jogo single-player/standalone.
-  Em sessoes online a engine ignora a pausa.
+At the top of `scripts/main.lua`, in `Config.mode`:
+
+- **`"toggle"`** (default): toggles pause on each **ESC** press. Works without knowing
+  the widget name, but can desync if the menu is closed with the mouse (press ESC again).
+- **`"detect"`**: detects the visible menu widget and syncs pause automatically,
+  regardless of how the menu is opened or closed (ESC, mouse, Resume button).
+  More robust, but requires `menuWidgetPatterns` to match only the pause menu.
+
+Other options:
+- `discoverKey`: key to list viewport widgets (default `F8`).
+- `pollIntervalMs`: poll interval in `detect` mode (default 200 ms).
+- `debug`: enable/disable console logs.
 
 ---
 
-## Estrutura dos arquivos
+## 6. Troubleshooting
+
+- **Nothing happens / no logs**: confirm UE4SS loaded (console opened) and the mod
+  appears as loaded. Make sure files are in the `*-Shipping.exe` folder, not the root launcher.
+- **UE4SS fails at startup / `PS Scan failed`**: SolarPunk uses UE 5.7.1. Use
+  `UE4SS_v3.0.1-954-g272ce2f8` or a newer experimental build, set the engine override
+  to 5.7, and generate custom signatures.
+- **Stuck at "Waiting for object construction..."**: Pattern Sleuth found a wrong
+  `GUObjectArray` address. Regenerate `GUObjectArray.lua` with `tools/gen_guobjectarray.py`.
+- **F8 lists nothing**: the menu may not be a standard `UserWidget`; open the menu
+  before pressing F8 and make sure the game window has focus.
+- **Pauses on wrong menus (inventory, etc.)**: narrow `menuWidgetPatterns` to match
+  only the ESC pause menu.
+- **Multiplayer**: `SetGamePaused` only works in single-player/standalone. Online
+  sessions ignore engine pause.
+
+---
+
+## Advanced: UE4SS signatures for UE 5.7.1
+
+SolarPunk ships with a `.pdb` next to the shipping executable. The Python scripts in
+`tools/` read symbol addresses from that PDB and generate custom AOB signature files
+for UE4SS:
+
+| Script | Generates |
+|---|---|
+| `tools/gen_signatures.py` | `FName_Constructor.lua`, `StaticConstructObject.lua` |
+| `tools/gen_guobjectarray.py` | `GUObjectArray.lua` |
+| `tools/resolve_globals.py` | Compares PDB addresses vs Pattern Sleuth (diagnostic) |
+
+Place the generated `.lua` files in:
+```
+...\Win64\ue4ss\UE4SS_Signatures\
+```
+
+Re-run the scripts after a game patch that changes the shipping executable.
+
+---
+
+## File layout
 
 ```
-SolarpunkPauseOnMenu\             (repositorio)
+SolarpunkPauseOnMenu\             (repository)
     README.md
     mods.txt.exemplo
-    SolarpunkPauseOnMenu\           (copiar para ...\Win64\Mods\)
+    SolarpunkPauseOnMenu\           (copy to ...\Win64\Mods\)
         enabled.txt
         scripts\
             main.lua
-    tools\                          (opcional: gerar assinaturas UE4SS via PDB)
+    tools\                          (generate UE4SS signatures from PDB)
         gen_signatures.py
         gen_guobjectarray.py
         resolve_globals.py
