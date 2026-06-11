@@ -82,12 +82,18 @@ def count_occ(b):
 
 chosen=None
 for off, r, op in refs[:20]:
-    n=7
-    while n<=40:
+    for n in range(16, 41, 4):
         bs=image[off:off+n]
-        if count_occ(bs)==1:
-            chosen=(off,r,op,bs); break
-        n+=1
+        if len(bs) < n:
+            break
+        if count_occ(bs) == 1:
+            chosen = (off, r, op, bs)
+            break
+    if not chosen:
+        for n in range(7, 16):
+            bs=image[off:off+n]
+            if count_occ(bs)==1:
+                chosen=(off,r,op,bs); break
     if chosen: break
 
 if not chosen:

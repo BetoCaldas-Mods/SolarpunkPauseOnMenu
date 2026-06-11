@@ -1,40 +1,23 @@
 --[[
     SolarpunkPauseOnMenu
-    Pausa o jogo quando o menu (ESC) e exibido e despausa quando ele e fechado.
-
-    Funciona via UE4SS (Lua) em cima da Unreal Engine 5.
-    Veja o README.md para instalacao.
-
-    Modos de funcionamento (Config.mode):
-      "toggle" -> (padrao) Alterna a pausa a cada ESC pressionado. Comeca SEMPRE
-                  despausado. Atende ao pedido: ESC abre o menu -> pausa;
-                  ESC fecha o menu -> despausa. Robusto e sem risco de travar.
-      "detect" -> Detecta o widget do menu VISIVEL na viewport e sincroniza a pausa
-                  automaticamente. Mais robusto contra fechar o menu pelo mouse, MAS
-                  exige que Config.menuWidgetPatterns case SOMENTE com o widget do
-                  menu de pausa (descubra o nome com a tecla F8).
+    Congela o jogo quando W_IngameMenu_C fica visivel (menu ESC).
+    Usa TimeDilation em vez de SetGamePaused para nao bloquear ESC fechar o menu.
 ]]
 
 local Config = {
-    mode = "toggle",
-
-    pauseKey = Key.ESCAPE,
-
     discoverKey = Key.F8,
+    pollIntervalMs = 150,
 
-    -- Use apenas no modo "detect". Padroes em minusculas, casados por substring
-    -- no nome da CLASSE do widget. Mantenha o mais especifico possivel.
     menuWidgetPatterns = {
-        "pausemenu",
-        "pause_menu",
+        "w_ingamemenu",
+        "ingamemenu",
     },
-
-    pollIntervalMs = 200,
 
     debug = true,
 }
 
-local modPaused = false
+local modFrozen = false
+local pollActive = false
 
 local function log(message)
     if Config.debug then
@@ -58,19 +41,28 @@ local function getGameplayStatics()
     return nil
 end
 
-local function setGamePaused(shouldPause)
+local function clearEnginePause(controller, statics)
+    statics:SetGamePaused(controller, false)
+end
+
+local function setWorldFrozen(shouldFreeze)
     local statics = getGameplayStatics()
     local controller = getPlayerController()
     if not statics or not controller then
-        log("Nao foi possivel resolver GameplayStatics/PlayerController.")
         return false
     end
-    statics:SetGamePaused(controller, shouldPause)
-    log(shouldPause and "Jogo PAUSADO." or "Jogo DESPAUSADO.")
+
+    clearEnginePause(controller, statics)
+    statics:SetGlobalTimeDilation(controller, shouldFreeze and 0.0 or 1.0)
+
+    pcall(function()
+        controller:SetIgnoreMoveInput(shouldFreeze)
+        controller:SetIgnoreLookInput(shouldFreeze)
+    end)
+
     return true
 end
 
--- ESlateVisibility: 0=Visible, 1=Collapsed, 2=Hidden, 3=HitTestInvisible, 4=SelfHitTestInvisible
 local function isWidgetActuallyVisible(widget)
     local okViewport, inViewport = pcall(function() return widget:IsInViewport() end)
     if not okViewport or not inViewport then
@@ -78,8 +70,8 @@ local function isWidgetActuallyVisible(widget)
     end
     local okVis, vis = pcall(function() return widget:GetVisibility() end)
     if okVis and vis ~= nil then
-        local v = tonumber(vis)
-        if v ~= nil and (v == 1 or v == 2) then
+        local value = tonumber(vis)
+        if value ~= nil and (value == 1 or value == 2) then
             return false
         end
     end
@@ -96,7 +88,7 @@ local function widgetMatchesMenu(widget)
     return false
 end
 
-local function isMenuVisible()
+local function isIngameMenuVisible()
     local widgets = FindAllOf("UserWidget")
     if not widgets then
         return false
@@ -109,64 +101,54 @@ local function isMenuVisible()
     return false
 end
 
-local function syncPauseWithMenu()
-    local menuVisible = isMenuVisible()
-    if menuVisible and not modPaused then
-        if setGamePaused(true) then modPaused = true end
-    elseif not menuVisible and modPaused then
-        if setGamePaused(false) then modPaused = false end
+local function syncFreezeState()
+    local shouldFreeze = isIngameMenuVisible()
+    if shouldFreeze == modFrozen then
+        return
+    end
+    if setWorldFrozen(shouldFreeze) then
+        modFrozen = shouldFreeze
+        log(shouldFreeze and "Jogo CONGELADO (menu ESC aberto)." or "Jogo RETOMADO (menu ESC fechado).")
     end
 end
 
-local function startDetectMode()
-    log("Modo 'detect' ativo. Padroes do widget: " .. table.concat(Config.menuWidgetPatterns, ", "))
+local function dumpVisibleWidgets()
+    local widgets = FindAllOf("UserWidget")
+    if not widgets then
+        log("Nenhum UserWidget encontrado.")
+        return
+    end
+    log("--- Widgets VISIVEIS na viewport ---")
+    local count = 0
+    for _, widget in ipairs(widgets) do
+        if widget:IsValid() and isWidgetActuallyVisible(widget) then
+            count = count + 1
+            local mark = widgetMatchesMenu(widget) and "  <== MENU ESC" or ""
+            log("  " .. widget:GetClass():GetFName():ToString() .. mark)
+        end
+    end
+    log("--- Total visiveis: " .. count .. " ---")
+end
+
+local function startPolling()
+    if pollActive then
+        return
+    end
+    pollActive = true
+    setWorldFrozen(false)
+    log("Polling ativo. Congela via TimeDilation (ESC do menu preservado). F8 lista widgets.")
     LoopAsync(Config.pollIntervalMs, function()
-        ExecuteInGameThread(function() syncPauseWithMenu() end)
+        ExecuteInGameThread(syncFreezeState)
         return false
     end)
 end
 
-local function startToggleMode()
-    log("Modo 'toggle' ativo. Pressione ESC para alternar a pausa.")
-    RegisterKeyBind(Config.pauseKey, function()
-        ExecuteInGameThread(function()
-            modPaused = not modPaused
-            setGamePaused(modPaused)
-        end)
-    end)
-end
-
-local function dumpVisibleWidgets()
-    ExecuteInGameThread(function()
-        local widgets = FindAllOf("UserWidget")
-        if not widgets then
-            log("Nenhum UserWidget encontrado.")
-            return
-        end
-        log("--- Widgets VISIVEIS na viewport ---")
-        local count = 0
-        for _, widget in ipairs(widgets) do
-            if widget:IsValid() and isWidgetActuallyVisible(widget) then
-                count = count + 1
-                local mark = widgetMatchesMenu(widget) and "  <== CASA com padrao" or ""
-                log("  " .. widget:GetClass():GetFName():ToString() .. mark)
-            end
-        end
-        log("--- Total visiveis: " .. count .. " ---")
-        log("Copie o nome da classe do menu de pausa para Config.menuWidgetPatterns e use mode='detect'.")
-    end)
-end
-
 RegisterKeyBind(Config.discoverKey, function()
-    dumpVisibleWidgets()
+    ExecuteInGameThread(dumpVisibleWidgets)
 end)
 
-if Config.mode == "detect" then
-    startDetectMode()
-elseif Config.mode == "toggle" then
-    startToggleMode()
-else
-    log("Config.mode invalido: use 'toggle' ou 'detect'.")
-end
+RegisterHook("/Script/Engine.PlayerController:ClientRestart", function() end, function()
+    ExecuteInGameThread(startPolling)
+end)
 
-log("Carregado. Modo: " .. Config.mode .. ". Tecla de descoberta de widgets: F8 (configuravel).")
+log("Carregado. Polling inicia ao entrar no jogo.")

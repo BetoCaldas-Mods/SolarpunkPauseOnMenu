@@ -103,7 +103,7 @@ def count_occ(pattern):
         start = idx + 1
     return cnt
 
-def make_unique_aob(rva, min_len=20, max_len=120):
+def make_unique_aob(rva, min_len=32, max_len=120):
     n = min_len
     while n <= max_len:
         bs = read_bytes(rva, n)
