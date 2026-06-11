@@ -2,6 +2,12 @@
 
 Pauses the game when the ESC menu is shown and unpauses when it is closed.
 
+## Demo
+
+[![SolarpunkPauseOnMenu demo](assets/header-banner.jpg)](https://youtu.be/DE7aQ7MiXJo)
+
+Watch the mod in action: [YouTube — SolarpunkPauseOnMenu](https://youtu.be/DE7aQ7MiXJo)
+
 Solarpunk is built on **Unreal Engine 5** and packaged with IoStore (`.utoc` / `.ucas` / `.pak`).
 The game does not ship a native mod system, so this mod runs through **UE4SS**
 (Unreal Engine 4/5 Scripting System) using Lua scripts.
@@ -134,9 +140,11 @@ automatically between development and release:
 
 ### During development
 
-- Opening this project in **Cursor** enables consoles (`sessionStart` hook).
-- Switching git branches also enables consoles (`post-checkout` hook).
-- Or run manually: `.\scripts\dev-start.ps1`
+- Opening this project in **Cursor** syncs consoles from `config/console-mode.txt`
+  (`sessionStart` hook; does not override `release` after a push).
+- Switching git branches enables consoles (`post-checkout` hook).
+- Or run manually: `.\scripts\dev-start.ps1` (dev) or
+  `.\scripts\ue4ss-console.ps1 -Mode Release` (off).
 
 Reference values are in `config/ue4ss-debug.dev.ini` and `config/ue4ss-debug.release.ini`.
 
@@ -267,6 +275,7 @@ You can also trigger the workflow manually from the **Actions** tab (`workflow_d
 ```
 SolarpunkPauseOnMenu\             (repository)
     README.md
+    assets\                       (screenshots and demo media)
     mods.txt.exemplo
     release\
         README.md                 (minimal guide bundled in release zip)

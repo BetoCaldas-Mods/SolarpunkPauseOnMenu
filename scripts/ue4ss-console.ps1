@@ -1,7 +1,7 @@
 param(
-    [Parameter(Mandatory = $true)]
-    [ValidateSet("Release", "Dev")]
-    [string]$Mode,
+    [Parameter(Mandatory = $false)]
+    [ValidateSet("Release", "Dev", "Auto")]
+    [string]$Mode = "Auto",
 
     [switch]$UpdateGit
 )
@@ -26,6 +26,19 @@ if (-not (Test-Path $ConfigFile)) {
 $SettingsPath = (Get-Content $ConfigFile -Raw).Trim()
 if (-not (Test-Path $SettingsPath)) {
     throw "UE4SS-settings.ini not found: $SettingsPath"
+}
+
+if ($Mode -eq "Auto") {
+    if (Test-Path $ModeFile) {
+        $Mode = (Get-Content $ModeFile -Raw).Trim().ToLower()
+    }
+    else {
+        $Mode = "dev"
+    }
+    if ($Mode -notin @("dev", "release")) {
+        throw "Invalid console mode in $ModeFile : $Mode (expected dev or release)"
+    }
+    $Mode = if ($Mode -eq "release") { "Release" } else { "Dev" }
 }
 
 $Values = if ($Mode -eq "Release") {

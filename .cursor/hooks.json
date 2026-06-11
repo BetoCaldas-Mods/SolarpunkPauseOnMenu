@@ -3,7 +3,7 @@
   "hooks": {
     "sessionStart": [
       {
-        "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/ue4ss-console.ps1 -Mode Dev"
+        "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/ue4ss-console.ps1 -Mode Auto"
       }
     ]
   }

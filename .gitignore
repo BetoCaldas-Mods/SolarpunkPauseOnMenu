@@ -5,6 +5,13 @@
 run_log.txt
 _pdb_report.txt
 
+# Saída gerada pelos scripts de signatures (templates ficam em tools/UE4SS_Signatures/)
+tools/regen_*.txt
+tools/signatures-out/
+
+# Pacote de release gerado localmente
+SolarpunkPauseOnMenu.zip
+
 # Python
 __pycache__/
 *.pyc
