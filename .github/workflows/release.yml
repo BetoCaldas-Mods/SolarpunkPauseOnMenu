@@ -20,11 +20,15 @@ jobs:
           test -f SolarpunkPauseOnMenu/enabled.txt
           test -f SolarpunkPauseOnMenu/scripts/main.lua
           test -f release/README.md
+          test -f tools/UE4SS_Signatures/FName_Constructor.lua
+          test -f tools/UE4SS_Signatures/GUObjectArray.lua
+          test -f tools/UE4SS_Signatures/StaticConstructObject.lua
 
-      - name: Build minimal mod zip
+      - name: Build mod zip
         run: |
           mkdir -p dist
           cp -r SolarpunkPauseOnMenu dist/
+          cp -r tools/UE4SS_Signatures dist/
           cp release/README.md dist/README.md
           cd dist && zip -r ../SolarpunkPauseOnMenu.zip .
 

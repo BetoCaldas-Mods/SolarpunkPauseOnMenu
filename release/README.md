@@ -16,42 +16,93 @@ Pauses the game when you open the ESC menu and unpauses when you close it.
 
 > UE4SS is **not** included in this zip. You must install it separately.
 
-### UE 5.7.1 setup (if UE4SS fails to start)
-
-In `UE4SS-settings.ini`, set:
+The experimental UE4SS layout looks like this after install:
 
 ```
-[EngineVersionOverride]
-MajorVersion = 5
-MinorVersion = 7
+...\Win64\
+    dwmapi.dll
+    ue4ss\
+        UE4SS.dll
+        UE4SS-settings.ini
+        Mods\
 ```
-
-If UE4SS logs `PS Scan failed` or hangs at startup, you may need custom
-signatures. See the full guide:  
-https://github.com/BetoCaldas-Mods/SolarpunkPauseOnMenu
 
 ---
 
 ## Install
 
-1. Install UE4SS in `...\Solarpunk\Binaries\Win64\` (see Requirements).
-2. Copy the `SolarpunkPauseOnMenu` folder from this zip into:
-   ```
-   <Steam>\steamapps\common\Solarpunk\Solarpunk\Binaries\Win64\Mods\
-   ```
-3. The mod is enabled via `enabled.txt` (included).  
-   Alternatively, add this line to `Mods\mods.txt`:
-   ```
-   SolarpunkPauseOnMenu : 1
-   ```
+### 1. Install UE4SS
 
-Final layout:
+Extract the experimental UE4SS package into `...\Solarpunk\Binaries\Win64\`.
+
+### 2. Engine version override (required)
+
+Open `...\Win64\ue4ss\UE4SS-settings.ini` and set:
+
+```ini
+[EngineVersionOverride]
+MajorVersion = 5
+MinorVersion = 7
+```
+
+### 3. Copy UE4SS signatures (required for SolarPunk)
+
+SolarPunk uses UE **5.7.1**. The built-in UE4SS scanner cannot find all
+required functions on its own. This zip includes custom signatures for the
+current game build.
+
+Copy the `UE4SS_Signatures` folder from this zip into:
 
 ```
-...\Win64\Mods\SolarpunkPauseOnMenu\
-    enabled.txt
-    scripts\
-        main.lua
+<Steam>\steamapps\common\Solarpunk\Solarpunk\Binaries\Win64\ue4ss\UE4SS_Signatures\
+```
+
+Result:
+
+```
+...\ue4ss\UE4SS_Signatures\
+    FName_Constructor.lua
+    GUObjectArray.lua
+    StaticConstructObject.lua
+```
+
+> After a game patch, signatures may need to be regenerated. Check the GitHub
+> repo for updated files or the full guide.
+
+### 4. Copy the mod
+
+Copy the `SolarpunkPauseOnMenu` folder from this zip into:
+
+```
+<Steam>\steamapps\common\Solarpunk\Solarpunk\Binaries\Win64\ue4ss\Mods\
+```
+
+> **Not** `Win64\Mods\` at the root. The experimental UE4SS build loads mods
+> from `ue4ss\Mods\`.
+
+The mod is enabled via `enabled.txt` (included).  
+Alternatively, add this line to `ue4ss\Mods\mods.txt`:
+
+```
+SolarpunkPauseOnMenu : 1
+```
+
+### Final layout
+
+```
+...\Win64\
+    dwmapi.dll
+    ue4ss\
+        UE4SS-settings.ini
+        UE4SS_Signatures\
+            FName_Constructor.lua
+            GUObjectArray.lua
+            StaticConstructObject.lua
+        Mods\
+            SolarpunkPauseOnMenu\
+                enabled.txt
+                scripts\
+                    main.lua
 ```
 
 ---
@@ -74,8 +125,9 @@ console. Use this only if you switch to `detect` mode in `scripts/main.lua`.
 
 | Problem | What to try |
 |---|---|
-| Nothing happens | Confirm UE4SS loaded (console may be hidden). Check files are in the `Win64` shipping folder. |
-| UE4SS won't start | Use experimental build + engine override 5.7. See full README on GitHub. |
+| Nothing happens | Confirm the mod is in `ue4ss\Mods\`, not `Win64\Mods\`. Check `ue4ss\UE4SS.log`. |
+| UE4SS won't start / `PS scan timed out` | Install signatures from this zip into `ue4ss\UE4SS_Signatures\`. Set engine override 5.7. |
+| Worked before a game update | Regenerate or download new signatures from GitHub. |
 | Pause desyncs | Press ESC once more, or switch to `detect` mode (see full guide). |
 
 ---

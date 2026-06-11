@@ -76,7 +76,7 @@ UE4SS must be installed next to that executable.
 ### Option A: Download the release zip (recommended)
 
 Go to [GitHub Releases](https://github.com/BetoCaldas-Mods/SolarpunkPauseOnMenu/releases)
-and download **`SolarpunkPauseOnMenu.zip`**. It contains only what is needed to run the mod:
+and download **`SolarpunkPauseOnMenu.zip`**. It contains what is needed to run the mod:
 
 ```
 README.md                   (quick install guide)
@@ -84,6 +84,10 @@ SolarpunkPauseOnMenu/
     enabled.txt
     scripts/
         main.lua
+UE4SS_Signatures/
+    FName_Constructor.lua
+    GUObjectArray.lua
+    StaticConstructObject.lua
 ```
 
 The zip README (`release/README.md` in the repo) is a short end-user guide.
@@ -257,7 +261,7 @@ git push origin v1.0.0
 The workflow `.github/workflows/release.yml` will:
 
 1. Validate mod files and `release/README.md` exist
-2. Create `SolarpunkPauseOnMenu.zip` (mod folder + minimal `README.md`)
+2. Create `SolarpunkPauseOnMenu.zip` (mod folder + UE4SS signatures + `README.md`)
 3. Publish a GitHub Release with that zip attached
 
 Test locally before tagging:
